@@ -7,102 +7,40 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Set up Python
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python 3.9
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
-    
-    - name: Install dependencies
+        python-version: '3.9'
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          git zip unzip openjdk-11-jdk wget \
+          autoconf libtool pkg-config zlib1g-dev \
+          libncurses5-dev libncursesw5-dev libtinfo5 \
+          cmake libffi-dev libssl-dev
+
+    - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install buildozer cython
-        sudo apt-get update
-        sudo apt-get install -y git zip unzip openjdk-11-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
-    
-    - name: Build with Buildozer
+        pip install buildozer==1.5.0 cython==0.29.36
+
+    - name: Build APK with Buildozer
       run: |
         buildozer android debug
-    
-    - name: Upload APK
+      continue-on-error: false
+
+    - name: Upload APK artifact
       uses: actions/upload-artifact@v3
+      if: success()
       with:
         name: amica-apk
         path: bin/*.apk
-```
-
-4. Click **"Commit new file"**
-
----
-
-### **Step 4: Enable GitHub Actions**
-
-1. At the top of your repository, click the **"Actions"** tab
-2. If you see a message about workflows, click **"I understand my workflows, go ahead and enable them"**
-3. You should now see **"Build APK"** workflow
-
----
-
-### **Step 5: Start Building Your APK**
-
-1. Click on **"Build APK"** workflow name
-2. On the right side, click **"Run workflow"** button
-3. Click the green **"Run workflow"** button again
-4. Wait... (The build takes 20-30 minutes)
-5. You'll see a yellow circle 🟡 (building) → then green checkmark ✅ (done!)
-
----
-
-### **Step 6: Download Your APK**
-
-1. Click on the completed workflow (the one with ✅)
-2. Scroll to the bottom
-3. You'll see **"Artifacts"** section
-4. Click **"amica-apk"** to download a ZIP file
-5. Extract the ZIP file
-6. Inside you'll find your **APK file**!
-
----
-
-## 📱 **Step 7: Install APK on Your Phone**
-
-1. Send the APK file to your phone (via email, USB, or cloud storage)
-2. On your Android phone:
-   - Go to **Settings** → **Security**
-   - Enable **"Install from unknown sources"** or **"Install unknown apps"**
-3. Open the APK file
-4. Click **"Install"**
-5. Done! Your app is installed! 🎉
-
----
-
-## 🎥 **Visual Guide (What You'll See):**
-```
-GitHub Website:
-┌─────────────────────────────────────┐
-│  [+] New    [your-profile]         │
-│                                     │
-│  📁 amica-app                       │
-│  ├── 📄 main.py                    │
-│  ├── 📄 buildozer.spec             │
-│  ├── 📁 .github                    │
-│  │   └── 📁 workflows              │
-│  │       └── 📄 build.yml          │
-│  └── 📄 README.md                  │
-│                                     │
-│  [Actions] [Projects] [Settings]   │
-└─────────────────────────────────────┘
-
-After clicking Actions:
-┌─────────────────────────────────────┐
-│  All workflows                      │
-│  ✅ Build APK                       │
-│     Completed 5 minutes ago         │
-│                                     │
-│  📦 Artifacts                       │
-│  └── amica-apk (45 MB)  [Download] │
-└─────────────────────────────────────┘
+        if-no-files-found: error
